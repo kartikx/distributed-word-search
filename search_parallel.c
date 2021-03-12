@@ -56,8 +56,6 @@ int main(int argc, char* argv[]) {
     // printf("%d\n", numLines);
     // exit(0);
 
-    printContents(fileContents);
-
     // for (int i = 0; i < numWords; i++) searchWord(fileContents, 0, numLines, wordSet[i]);
 
     MPI_Init(&argc, &argv);
@@ -120,61 +118,36 @@ int main(int argc, char* argv[]) {
 
     // printLocalContents(fileContents, start_offset, local_n, rank, size);
 
-    int sendbuf;
+    int currIndex;
 
+    // FoundWords is useful only for P0.
     int foundWords[numWords];
     memset(foundWords, 0, numWords * sizeof(int));
-    int foundCount = 0;
+
+    int localFoundWords[numWords];
+    memset(localFoundWords, 0, numWords * sizeof(int));
 
     // Perform Local Search and send messages to P0
     for (int i = 0; i < localWordCount; i++) {
         int local_ans = searchWord(fileContents, numLines, start_offset, local_n, localWordSet[i]);
-        sendbuf = wordIndex[i];
+        currIndex = wordIndex[i];
         if (local_ans == true) {
-            // printf("P%d found %s\n", rank, localWordSet[i]);
-
-            if (rank != 0) {
-                MPI_Send(&sendbuf, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-                printf("P%d sent\n", rank);
-            } else {
-                if (foundWords[wordIndex[i]] == 0) {
-                    foundCount += 1;
-                }
-                foundWords[wordIndex[i]] = 1;
-            }
-        } else {
-            // All indices returned in the message should be between [0 .. MAX_WORDSET - 1]
-            // A value greater indicates that the word wasn't found.
-            sendbuf += MAX_WORDSET;
-            if (rank != 0) {
-                MPI_Send(&sendbuf, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-                // printf("P%d sent\n", rank);
-            }
+            printf("P%d found %s\n", rank, localWordSet[i]);
+            localFoundWords[currIndex] = 1;
         }
     }
 
+    // printArray(localFoundWords, numWords, rank);
+    MPI_Reduce(localFoundWords, foundWords, numWords, MPI_INT, MPI_LOR, 0, MPI_COMM_WORLD);
+
     // P0 receives messages.
     if (rank == 0) {
-        int totalMessages;
-        if (size <= numWords) {
-            totalMessages = numWords - localWordCount;
-        } else {
-            totalMessages = size - 1;
-        }
+        int foundCount = 0;
 
-        // printf("P0 expects %d messages\n", totalMessages);
+        printf("After reduce\n");
+        printArray(foundWords, numWords, 0);
 
-        int recv;
-        for (int i = 0; i < totalMessages; i++) {
-            MPI_Recv(&recv, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            // printf("P0 recvd %d\n", recv);
-            if (recv < MAX_WORDSET && foundWords[recv] == 0) {
-                foundCount += 1;
-                foundWords[recv] = 1;
-            }
-        }
-
-        // printf("Expecting %d, Foundcount is: %d\n", numWords, foundCount);
+        foundCount = getArraySum(foundWords, numWords);
 
         if (option == OR && foundCount > 0) {
             printf("Found atleast one word\n");

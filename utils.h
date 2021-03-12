@@ -12,5 +12,7 @@ int readFile(FILE* fp, char** fileContents);
 void initWordSet(char* wordSet[], int numWords, char* argv[]);
 void printAllottedWords(char* localWordSet[], int localWordCount, int totalProcessesForWord,
                         int* wordIndex, int rank, int start_offset, int local_n, int nP);
+void printArray(int foundWords[], int numWords, int rank);
+int getArraySum(int foundWords[], int numWords);
 
 #endif

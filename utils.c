@@ -81,6 +81,8 @@ int readFile(FILE* fp, char** fileContents) {
         counter++;
     }
 
+    // Alternative approach tried, gave Seg Faults for some reason.
+
     // while (fread(buffer, sizeof(char), MAX_LINE, fp) != 0) {
     //     fileContents[counter] = malloc(strlen(buffer) * sizeof(char));
     //     strcpy(fileContents[counter], buffer);
@@ -121,4 +123,23 @@ void printAllottedWords(char* localWordSet[], int localWordCount, int totalProce
             printf("%d %d\n", start_offset, local_n);
         }
     }
+}
+
+void printArray(int foundWords[], int numWords, int rank) {
+    printf("P%d [ ", rank);
+
+    for (int i = 0; i < numWords; i++) {
+        printf("%d ", foundWords[i]);
+    }
+
+    printf("]\n");
+}
+
+int getArraySum(int foundWords[], int numWords) {
+    int sum = 0;
+    for (int i = 0; i < numWords; i++) {
+        sum += foundWords[i];
+    }
+
+    return sum;
 }
