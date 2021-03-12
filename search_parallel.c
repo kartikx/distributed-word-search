@@ -53,8 +53,10 @@ int main(int argc, char* argv[]) {
 
     // Store contents of file and return total number of "lines"
     numLines = readFile(fptr, fileContents);
+    // printf("%d\n", numLines);
+    // exit(0);
 
-    // printContents(fileContents);
+    printContents(fileContents);
 
     // for (int i = 0; i < numWords; i++) searchWord(fileContents, 0, numLines, wordSet[i]);
 
@@ -78,6 +80,12 @@ int main(int argc, char* argv[]) {
     // Stores total number of processes that have been allotted the same word
     // as this process. Only useful when each process gets only 1 word.
     int totalProcessesForWord;
+
+    double start_time, elapsed_time, max_time;
+
+    // start timer
+    MPI_Barrier(MPI_COMM_WORLD);
+    start_time = MPI_Wtime();
 
     // Some processes get more than one word.
     if (size < numWords) {
@@ -118,15 +126,16 @@ int main(int argc, char* argv[]) {
     memset(foundWords, 0, numWords * sizeof(int));
     int foundCount = 0;
 
+    // Perform Local Search and send messages to P0
     for (int i = 0; i < localWordCount; i++) {
         int local_ans = searchWord(fileContents, numLines, start_offset, local_n, localWordSet[i]);
         sendbuf = wordIndex[i];
         if (local_ans == true) {
-            printf("P%d found %s\n", rank, localWordSet[i]);
+            // printf("P%d found %s\n", rank, localWordSet[i]);
 
             if (rank != 0) {
                 MPI_Send(&sendbuf, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-                // printf("P%d sent\n", rank);
+                printf("P%d sent\n", rank);
             } else {
                 if (foundWords[wordIndex[i]] == 0) {
                     foundCount += 1;
@@ -144,6 +153,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // P0 receives messages.
     if (rank == 0) {
         int totalMessages;
         if (size <= numWords) {
@@ -166,10 +176,23 @@ int main(int argc, char* argv[]) {
 
         // printf("Expecting %d, Foundcount is: %d\n", numWords, foundCount);
 
-        if (option == OR && foundCount > 0)
+        if (option == OR && foundCount > 0) {
             printf("Found atleast one word\n");
-        if (option == AND && foundCount == numWords)
+            printf("Query successful\n");
+        } else if (option == AND && foundCount == numWords) {
             printf("Found all %d words\n", numWords);
+            printf("Query successful\n");
+        } else {
+            printf("Query unsuccessful\n");
+        }
+    }
+
+    elapsed_time = MPI_Wtime() - start_time;
+
+    MPI_Reduce(&elapsed_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        printf("Time taken: %lfs\n", max_time);
     }
 
     // printf("P%d exited\n", rank);

@@ -5,7 +5,7 @@
 #define MAX_LINE 1000
 
 // Number of total lines in the file
-#define MAX_FILE 1000
+#define MAX_FILE 4000
 
 // Number of query words provided.
 #define MAX_WORDSET 10
