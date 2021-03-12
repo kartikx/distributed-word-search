@@ -75,19 +75,24 @@ int readFile(FILE* fp, char** fileContents) {
      * lines.
      */
     while (fgets(buffer, MAX_LINE - 1, fp)) {
-        fileContents[counter] = malloc(strlen(buffer) * sizeof(char));
-        buffer[strcspn(buffer, "\n")] = '\0';
-        strcpy(fileContents[counter], buffer);
-        counter++;
+        int index = strlen(buffer) - 1;
+
+        // Push back characters if currently breaking a word.
+        while (index > 0 && !isValidWord(&buffer[index])) {
+            buffer[index--] = '\0';
+            fseek(fp, -1, SEEK_CUR);
+        }
+
+        buffer[index] = '\0';
+
+        // Append to fileContents if non-empty string.
+        if (buffer[0] != '\0') {
+            fileContents[counter] = malloc((index + 1) * sizeof(char));
+
+            strcpy(fileContents[counter], buffer);
+            counter++;
+        }
     }
-
-    // Alternative approach tried, gave Seg Faults for some reason.
-
-    // while (fread(buffer, sizeof(char), MAX_LINE, fp) != 0) {
-    //     fileContents[counter] = malloc(strlen(buffer) * sizeof(char));
-    //     strcpy(fileContents[counter], buffer);
-    //     counter++;
-    // }
 
     return counter;
 }
