@@ -11,6 +11,6 @@ int searchWord(char** fileContents, int totalLines, int start, int size, char* w
 int readFile(FILE* fp, char** fileContents);
 void initWordSet(char* wordSet[], int numWords, char* argv[]);
 void printAllottedWords(char* localWordSet[], int localWordCount, int totalProcessesForWord,
-                        int rank, int start_offset, int local_n, int nP);
+                        int* wordIndex, int rank, int start_offset, int local_n, int nP);
 
 #endif

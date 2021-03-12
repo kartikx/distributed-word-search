@@ -23,10 +23,11 @@ void printLocalContents(char** fileContents, int start, int size, int rank, int 
     for (int i = 0; i < nP; i++) {
         MPI_Barrier(MPI_COMM_WORLD);
         if (i == rank) {
-            printf("P%d\n", rank);
+            printf("P%d[\n", rank);
             for (int i = 0; i < size && fileContents[start + i] != NULL; i++) {
                 printf("%s\n", fileContents[start + i]);
             }
+            printf("]\n");
         }
     }
 }
@@ -36,7 +37,8 @@ void printLocalContents(char** fileContents, int start, int size, int rank, int 
 // is not a complete word.
 int isValidWord(char* wordPtr) {
     char ch = *wordPtr;
-    if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9') return false;
+    if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9')
+        return false;
     return true;
 }
 
@@ -64,14 +66,26 @@ int searchWord(char** fileContents, int totalLines, int start, int size, char* w
 // Read contents of file and store it.
 int readFile(FILE* fp, char** fileContents) {
     int counter = 0;
+
     char buffer[MAX_LINE];
 
+    /**
+     * Fgets will read until MAX_LINE - 1 or /n
+     * This may lead to the problem of disproportionate
+     * lines.
+     */
     while (fgets(buffer, MAX_LINE - 1, fp)) {
         fileContents[counter] = malloc(strlen(buffer) * sizeof(char));
         buffer[strcspn(buffer, "\n")] = '\0';
         strcpy(fileContents[counter], buffer);
         counter++;
     }
+
+    // while (fread(buffer, sizeof(char), MAX_LINE, fp) != 0) {
+    //     fileContents[counter] = malloc(strlen(buffer) * sizeof(char));
+    //     strcpy(fileContents[counter], buffer);
+    //     counter++;
+    // }
 
     return counter;
 }
@@ -86,14 +100,22 @@ void initWordSet(char* wordSet[], int numWords, char* argv[]) {
 }
 
 void printAllottedWords(char* localWordSet[], int localWordCount, int totalProcessesForWord,
-                        int rank, int start_offset, int local_n, int nP) {
+                        int* wordIndex, int rank, int start_offset, int local_n, int nP) {
     for (int i = 0; i < nP; i++) {
         MPI_Barrier(MPI_COMM_WORLD);
         if (i == rank) {
             printf("P%d: ", rank);
+
             for (int i = 0; i < localWordCount; i++) {
                 printf("%s ", localWordSet[i]);
             }
+
+            printf("[ ");
+            for (int i = 0; i < localWordCount; i++) {
+                printf("%d ", wordIndex[i]);
+            }
+            printf("] ");
+
             printf("[%d] ", totalProcessesForWord);
 
             printf("%d %d\n", start_offset, local_n);
