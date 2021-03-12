@@ -53,8 +53,6 @@ int main(int argc, char* argv[]) {
 
     // Store contents of file and return total number of "lines"
     numLines = readFile(fptr, fileContents);
-    // printf("%d\n", numLines);
-    // exit(0);
 
     // for (int i = 0; i < numWords; i++) searchWord(fileContents, 0, numLines, wordSet[i]);
 
@@ -165,7 +163,7 @@ int main(int argc, char* argv[]) {
     MPI_Reduce(&elapsed_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
-        printf("Time taken: %lfs\n", max_time);
+        printf("[N = %d] Time taken: %lfs\n", size, max_time);
     }
 
     // printf("P%d exited\n", rank);

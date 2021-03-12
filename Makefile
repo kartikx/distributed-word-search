@@ -6,3 +6,6 @@ search_parallel.o: search_parallel.c search_parallel.h
 
 program: utils.o search_parallel.o
 	mpicc -o exec utils.o search_parallel.o -lm
+
+timer: utils.o search_parallel.o
+	mpicc -o exectime utils.o search_parallel.o -lm
