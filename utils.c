@@ -32,6 +32,60 @@ void printLocalContents(char** fileContents, int start, int size, int rank, int 
     }
 }
 
+// Reads and searches for words in the given subregion of the File.
+void readLocalFile(FILE* fp, int start_offset, int local_n, char** wordSet, int* localAns,
+                   int numWords, int rank) {
+    /**
+     * Seek to start_offset from SEEK_SET.
+     * Read current word completely.
+     * Check if you've exceeded the limit by comparing ftell() output.
+     * It may be possible that you're starting from the end of a word, in which
+     * case you should skip it.
+     */
+
+    fseek(fp, start_offset, SEEK_SET);
+    long int limit = ftell(fp);
+    // printf("Start is: %ld\n", limit);
+
+    limit += (long int)local_n;
+
+    // printf("End is: %ld\n", limit);
+
+    if (fseek(fp, -1, SEEK_CUR) == 0 && isValidChar(fgetc(fp))) {
+        char ch;
+        while (isValidChar((ch = fgetc(fp))))
+            ;
+    }
+
+    char buffer[MAX_LINE];
+
+    // You had decided that on the last word of your entire block,
+    // You would exceed your limit, which will happen.
+
+    // I have skipped the current word.
+    while (ftell(fp) < limit && fgets(buffer, MAX_LINE - 1, fp)) {
+        int index = strlen(buffer) - 1;
+
+        while (!feof(fp) && index > 0 && isValidChar(buffer[index])) {
+            if (feof(fp))
+                break;
+            // printf("%c ", buffer[index]);
+            buffer[index--] = '\0';
+            fseek(fp, -1, SEEK_CUR);
+        }
+
+        if (!feof(fp)) {
+            buffer[index] = '\0';
+            // fseek(fp, 1, SEEK_CUR);
+        }
+
+        if (buffer[0] != '\0') {
+            searchWordInBuffer(buffer, wordSet, localAns, numWords, rank);
+            // printf("[%s]\n", buffer);
+        }
+    }
+}
+
 // Detects whether the given character is a valid alphanumeric.
 // If yes, it returns false, indicating that the corresponding substring
 // is not a complete word.
@@ -40,6 +94,13 @@ int isValidWord(char* wordPtr) {
     if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9')
         return false;
     return true;
+}
+
+// Returns true if alphanumeric.
+int isValidChar(char ch) {
+    if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9')
+        return true;
+    return false;
 }
 
 // Searches the fileContents in a given interval for the given word.
@@ -61,6 +122,33 @@ int searchWord(char** fileContents, int totalLines, int start, int size, char* w
     }
 
     return false;
+}
+
+// Takes in a string buffer, and searches for all the words in the charSet in it.
+// Modifies the localAns bitVector, to be ultimately reduced.
+// ! Must be passed in localAns as all 0s.
+void searchWordInBuffer(char* buf, char** wordSet, int localAns[], int numWords, int rank) {
+    char* wordPtr;
+    char* word;
+
+    // Need to find complete occurence of word in curr String.
+    for (int i = 0; i < numWords; i++) {
+        wordPtr = buf;
+        word = wordSet[i];
+
+        // This condition ensures that each time this function is invoked,
+        // (for each buffer), then you consider only the words which were not
+        // found in other buffers of the block.
+        while (localAns[i] == 0 && (wordPtr = strstr(wordPtr, word)) != NULL) {
+            if (wordPtr == buf || isValidWord(wordPtr - 1)) {
+                // printf("P%d Found %s\n", rank, word);
+
+                localAns[i] = 1;
+                // break;
+            }
+            wordPtr += strlen(word);
+        }
+    }
 }
 
 // Read contents of file and store it.

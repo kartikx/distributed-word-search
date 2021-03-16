@@ -2,9 +2,11 @@
 #define SEARCH_PARALLEL_H
 
 // Size in bytes of a line.
-#define MAX_LINE 1000
+// ! eventually set this to a power of 2.
+#define MAX_LINE 1024
 
 // Number of total lines in the file
+// ! This is useless now.
 #define MAX_FILE 5000
 
 // Number of query words provided.

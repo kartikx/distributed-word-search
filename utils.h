@@ -15,4 +15,9 @@ void printAllottedWords(char* localWordSet[], int localWordCount, int totalProce
 void printArray(int foundWords[], int numWords, int rank);
 int getArraySum(int foundWords[], int numWords);
 
+void readLocalFile(FILE* fp, int start_offset, int local_n, char** wordSet, int* localAns,
+                   int numWords, int rank);
+int isValidChar(char ch);
+void searchWordInBuffer(char* buf, char** wordSet, int localAns[], int numWords, int rank);
+
 #endif
